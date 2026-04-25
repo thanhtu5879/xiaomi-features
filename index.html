@@ -25,12 +25,13 @@ header { background:var(--dark); padding:0 24px; display:flex; align-items:cente
 
 /* STICKY SEARCH */
 .sticky-search {
-  position:sticky; top:56px; z-index:190;
+  position:fixed; top:56px; left:0; right:0; z-index:190;
   background:var(--dark2); padding:10px 16px;
   border-bottom:1px solid #2A2A2A;
   transform:translateY(-110%);
   transition:transform 0.25s ease;
   pointer-events:none;
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
 }
 .sticky-search.visible { transform:translateY(0); pointer-events:auto; }
 .sticky-inner { max-width:800px; margin:0 auto; position:relative; }
@@ -150,7 +151,7 @@ header { background:var(--dark); padding:0 24px; display:flex; align-items:cente
 
 <!-- HEADER -->
 <header>
-  <a class="logo" href="#">
+  <a class="logo" href="#" onclick="clearSearch();window.scrollTo({top:0,behavior:'smooth'});return false;">
     <div class="logo-icon">
       <img src="xiaomi7.png" alt="Xiaomi"
            style="width:36px;height:36px;object-fit:contain;border-radius:7px;"
@@ -585,12 +586,26 @@ document.getElementById('clear-btn').addEventListener('click', clearSearch);
 ══════════════════════════════════════════ */
 async function init() {
   try {
-    [features, steps] = await Promise.all([
+    // Fetch 2 sheet độc lập — Steps lỗi không làm mất Feature
+    const [featRes, stepsRes] = await Promise.allSettled([
       fetchSheet('Feature'),
       fetchSheet('Steps')
     ]);
-    if (!features.length) throw new Error('empty');
-    usingDemo = false;
+
+    if (featRes.status === 'fulfilled' && featRes.value.length) {
+      features  = featRes.value;
+      usingDemo = false;
+    } else {
+      throw new Error('Feature sheet empty or failed');
+    }
+
+    if (stepsRes.status === 'fulfilled' && stepsRes.value.length) {
+      steps = stepsRes.value;
+    } else {
+      console.warn('Steps sheet failed, steps will be empty');
+      steps = [];
+    }
+
   } catch(e) {
     console.warn('Fallback sang dữ liệu mẫu:', e.message);
     features  = SAMPLE_FEATURES;
