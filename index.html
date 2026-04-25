@@ -235,9 +235,10 @@ header { background:var(--dark); padding:0 24px; display:flex; align-items:cente
    CẤU HÌNH
 ══════════════════════════════════════════ */
 const SHEET_ID       = '1_BpsY4izWhR9xyKww9vRviUIs7icMIfVxeXXZEZePMA';
-const GAS_URL        = 'https://script.google.com/macros/s/AKfycbw0itqhB00WgZS-q6jbaxalgWwKIbsP8Kj-VGJohDzvpcqZUYvD_oO2lrDUB2zad2y1/exec'; // ← thay bằng URL App Script sau khi deploy
+const GAS_URL        = 'https://script.google.com/macros/s/AKfycbw0itqhB00WgZS-q6jbaxalgWwKlbsP8Kj-VGJohDzvpcqZUYvD_oO2lrDUB2zad2y1/exec';
 const ITEMS_PER_PAGE = 4;
-const API = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=`;
+// headers=1 → bắt buộc API chỉ đọc hàng 1 làm header, không gộp nhiều hàng
+const API = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=`;
 
 /* ══════════════════════════════════════════
    STATE
@@ -290,15 +291,14 @@ const SAMPLE_STEPS = [
 ];
 
 /* ══════════════════════════════════════════
-   FETCH SHEET — FIX CHÍNH
-   Vấn đề cũ: cell.v = null khi ô trống → String(null) = "null"
-   Fix: kiểm tra null/undefined trước, trả về '' nếu rỗng
+   FETCH SHEET
+   headers=1 trong URL → API luôn trả đúng tên cột ở cols[].label
+   Không cần detect header nữa — đơn giản và chắc chắn hơn
 ══════════════════════════════════════════ */
 async function fetchSheet(sheetName) {
   const res  = await fetch(API + encodeURIComponent(sheetName));
   const text = await res.text();
 
-  // Google Sheets JSONP: bắt đầu bằng /*O_o*/\ngoogle.visualization.Query.setResponse({...});
   const start = text.indexOf('{');
   const end   = text.lastIndexOf('}');
   if (start === -1 || end === -1) throw new Error('Invalid response');
@@ -306,36 +306,22 @@ async function fetchSheet(sheetName) {
   const json = JSON.parse(text.substring(start, end + 1));
   if (!json.table) throw new Error('No table');
 
-  const rawCols = (json.table.cols || []).map(c => (c && c.label) ? String(c.label).trim() : '');
+  // headers=1 đảm bảo cols[].label luôn là tên cột thật
+  const headers = (json.table.cols || []).map(c => (c && c.label) ? String(c.label).trim() : '');
   const rows    = json.table.rows || [];
   if (!rows.length) return [];
 
-  // Phát hiện header thật vs header chữ cái (A, B, C...)
-  const isRealHeader = rawCols.some(c => c.length > 1 && !/^[A-Z]{1,2}$/.test(c));
-  let headers, dataRows;
-
-  if (isRealHeader) {
-    headers  = rawCols;
-    dataRows = rows;
-  } else {
-    // Header nằm ở row[0]
-    const firstRow = rows[0];
-    headers  = (firstRow.c || []).map(cell => (cell && cell.v != null) ? String(cell.v).trim() : '');
-    dataRows = rows.slice(1);
-  }
-
-  return dataRows.map(row => {
+  return rows.map(row => {
     const obj   = {};
     const cells = row.c || [];
     headers.forEach((h, i) => {
       if (!h) return;
       const cell = cells[i];
-      // KEY FIX: cell.v có thể là null (ô trống), số, hoặc chuỗi
-      // Không dùng String(null) → "null" hoặc String(undefined) → "undefined"
+      // cell.v có thể là null (ô trống), số, hoặc chuỗi — không dùng String(null)
       let val = '';
       if (cell != null) {
-        if (cell.v != null) val = cell.v;
-        else if (cell.f != null) val = cell.f; // formatted value (vd: ngày tháng)
+        if (cell.v != null)      val = cell.v;
+        else if (cell.f != null) val = cell.f;
       }
       obj[h] = String(val).trim();
     });
