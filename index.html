@@ -293,8 +293,8 @@ const SAMPLE_STEPS = [
 
 /* ══════════════════════════════════════════
    FETCH SHEET
-   headers=1 trong URL → API luôn trả đúng tên cột ở cols[].label
-   Không cần detect header nữa — đơn giản và chắc chắn hơn
+   headers=1 trong URL hoạt động tốt cho Feature.
+   Với Steps: cols[].label trống → header nằm ở row[0]
 ══════════════════════════════════════════ */
 async function fetchSheet(sheetName) {
   const res  = await fetch(API + encodeURIComponent(sheetName));
@@ -307,18 +307,37 @@ async function fetchSheet(sheetName) {
   const json = JSON.parse(text.substring(start, end + 1));
   if (!json.table) throw new Error('No table');
 
-  // headers=1 đảm bảo cols[].label luôn là tên cột thật
-  const headers = (json.table.cols || []).map(c => (c && c.label) ? String(c.label).trim() : '');
+  const rawCols = (json.table.cols || []).map(c => (c && c.label) ? String(c.label).trim() : '');
   const rows    = json.table.rows || [];
   if (!rows.length) return [];
 
-  return rows.map(row => {
+  // Nếu tất cả cols label trống → header nằm ở row[0]
+  const hasRealHeader = rawCols.some(c => c.length > 0);
+  let headers, dataRows;
+
+  if (hasRealHeader) {
+    headers  = rawCols;
+    dataRows = rows;
+  } else {
+    // Lấy header từ row[0], chỉ lấy các cột không trùng
+    const firstRow = rows[0];
+    const seenHeaders = new Set();
+    headers = (firstRow.c || []).map(cell => {
+      if (!cell || cell.v == null) return '';
+      const h = String(cell.v).trim();
+      if (seenHeaders.has(h)) return ''; // bỏ cột trùng
+      seenHeaders.add(h);
+      return h;
+    });
+    dataRows = rows.slice(1);
+  }
+
+  return dataRows.map(row => {
     const obj   = {};
     const cells = row.c || [];
     headers.forEach((h, i) => {
-      if (!h) return;
+      if (!h) return; // bỏ qua cột trùng hoặc trống
       const cell = cells[i];
-      // cell.v có thể là null (ô trống), số, hoặc chuỗi — không dùng String(null)
       let val = '';
       if (cell != null) {
         if (cell.v != null)      val = cell.v;
