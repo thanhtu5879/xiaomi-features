@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tra cứu tính năng Xiaomi By Trần Thanh Tú</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange: #FF6900;
+    --orange-light: #FFF0E6;
+    --orange-mid: #FFD4B3;
+    --dark: #0F0F0F;
+    --dark2: #1A1A1A;
+    --dark3: #242424;
+    --gray: #888;
+    --gray-light: #F5F5F5;
+    --white: #FFFFFF;
+    --border: #E8E8E8;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'Be Vietnam Pro', sans-serif;
+    background: var(--gray-light);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--dark);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .logo-icon { width: 28px; height: 28px; background: var(--orange); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon svg { width: 16px; height: 16px; }
+  .logo-text { font-size: 14px; font-weight: 600; color: var(--white); letter-spacing: 0.3px; }
+  .logo-sub { font-size: 11px; color: var(--gray); font-weight: 300; }
+  .header-right { font-size: 12px; color: var(--gray); }
+
+  /* HERO */
+  .hero { background: var(--dark); padding: 40px 24px 32px; text-align: center; }
+  .hero h1 { font-size: clamp(22px, 4vw, 32px); font-weight: 600; color: var(--white); line-height: 1.3; margin-bottom: 8px; }
+  .hero h1 span { color: var(--orange); }
+  .hero p { font-size: 14px; color: var(--gray); font-weight: 300; margin-bottom: 24px; }
+
+  /* SEARCH */
+  .search-wrap { max-width: 560px; margin: 0 auto; position: relative; }
+  .search-wrap input { width: 100%; padding: 14px 20px 14px 48px; font-size: 15px; font-family: 'Be Vietnam Pro', sans-serif; border: 2px solid transparent; border-radius: var(--radius); background: var(--dark3); color: var(--white); outline: none; transition: border-color 0.2s; }
+  .search-wrap input::placeholder { color: #555; }
+  .search-wrap input:focus { border-color: var(--orange); }
+  .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #555; width: 18px; height: 18px; }
+  .clear-btn { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #555; cursor: pointer; font-size: 18px; display: none; line-height: 1; }
+
+  /* FILTERS */
+  .filters { background: var(--dark2); padding: 12px 24px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid #2A2A2A; }
+  .filters::-webkit-scrollbar { display: none; }
+  .filter-btn { flex-shrink: 0; padding: 6px 14px; border-radius: 20px; border: 1px solid #333; background: transparent; color: var(--gray); font-size: 12px; font-family: 'Be Vietnam Pro', sans-serif; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .filter-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .filter-btn.active { background: var(--orange); border-color: var(--orange); color: var(--white); font-weight: 500; }
+
+  /* TRENDING */
+  .trending-bar { background: var(--white); padding: 10px 24px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+  .trending-bar::-webkit-scrollbar { display: none; }
+  .trending-label { font-size: 11px; color: var(--gray); white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+  .trend-tag { flex-shrink: 0; font-size: 12px; padding: 4px 12px; border-radius: 20px; background: var(--orange-light); color: var(--orange); cursor: pointer; font-weight: 500; transition: background 0.15s; white-space: nowrap; border: none; }
+  .trend-tag:hover { background: var(--orange-mid); }
+
+  /* MAIN */
+  .main { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+  .results-info { font-size: 12px; color: var(--gray); margin-bottom: 16px; padding: 0 4px; display: flex; justify-content: space-between; align-items: center; }
+
+  /* CARDS */
+  .card { background: var(--white); border-radius: var(--radius); margin-bottom: 10px; border: 1px solid var(--border); overflow: hidden; transition: box-shadow 0.2s; }
+  .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+  .card-header { padding: 16px 20px; cursor: pointer; display: flex; align-items: flex-start; gap: 14px; }
+  .cat-dot { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+  .card-info { flex: 1; min-width: 0; }
+  .card-title { font-size: 15px; font-weight: 600; color: var(--dark); margin-bottom: 4px; line-height: 1.3; }
+  .card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .card-desc { font-size: 13px; color: var(--gray); font-weight: 300; margin-top: 4px; line-height: 1.5; }
+  .chevron { color: #CCC; transition: transform 0.25s; flex-shrink: 0; margin-top: 8px; }
+  .card.open .chevron { transform: rotate(180deg); color: var(--orange); }
+
+  /* CARD BODY */
+  .card-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+  .card.open .card-body { max-height: 600px; }
+  .card-body-inner { padding: 0 20px 20px 20px; border-top: 1px solid var(--border); }
+  .steps-title { font-size: 11px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.8px; padding: 14px 0 10px; }
+  .step { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 8px; }
+  .step-num { min-width: 22px; height: 22px; background: var(--orange); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+  .step-text { font-size: 14px; color: var(--dark); line-height: 1.5; font-weight: 400; }
+  .note-box { margin-top: 10px; padding: 10px 14px; background: #F0F7FF; border-radius: var(--radius-sm); border-left: 3px solid #4A90D9; font-size: 13px; color: #1A4D7A; line-height: 1.5; }
+  .product-box { margin-top: 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray); }
+
+  /* PAGINATION */
+  .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; padding-bottom: 20px; }
+  .page-btn { min-width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--white); color: var(--dark); font-size: 14px; font-family: 'Be Vietnam Pro', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .page-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .page-btn.active { background: var(--orange); border-color: var(--orange); color: var(--white); font-weight: 600; pointer-events: none; }
+  .page-btn:disabled { background: var(--gray-light); color: #ccc; border-color: #eee; cursor: not-allowed; }
+
+  /* EMPTY / LOADING */
+  .state-box { text-align: center; padding: 60px 20px; color: var(--gray); }
+  .state-box .icon { font-size: 40px; margin-bottom: 12px; }
+  .state-box p { font-size: 14px; }
+
+  /* CATEGORY COLORS */
+  .cat-man-hinh { background: #E6F1FB; } .cat-camera { background: #E1F5EE; } .cat-pin { background: #EAF3DE; } .cat-cai-dat { background: #FAEEDA; } .cat-ket-noi { background: #FBEAF0; } .cat-khac { background: #F1EFE8; }
+  .badge-man-hinh { background: #E6F1FB; color: #185FA5; } .badge-camera { background: #E1F5EE; color: #0F6E56; } .badge-pin { background: #EAF3DE; color: #3B6D11; } .badge-cai-dat { background: #FAEEDA; color: #854F0B; } .badge-ket-noi { background: #FBEAF0; color: #993556; } .badge-khac { background: #F1EFE8; color: #5F5E5A; }
+
+  @media (max-width: 600px) {
+    .hero { padding: 20px 16px 20px; }
+    .hero h1 { font-size: 20px; margin-bottom: 6px; }
+    .hero p { font-size: 13px; margin-bottom: 16px; display: none; }
+    .search-wrap input { padding: 14px 44px; font-size: 16px; border-radius: 10px; }
+    .filters { padding: 10px 12px; gap: 6px; }
+    .filter-btn { padding: 8px 14px; font-size: 13px; }
+    .trending-bar { padding: 8px 12px; gap: 8px; }
+    .trend-tag { font-size: 13px; padding: 6px 12px; }
+    .main { padding: 12px 10px; }
+    .card-header { padding: 14px 14px; gap: 10px; }
+    .cat-dot { width: 32px; height: 32px; font-size: 15px; border-radius: 8px; }
+    header { padding: 0 14px; }
+    .logo-sub { display: none; }
+    .page-btn { min-width: 32px; height: 32px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="#">
+    <div class="logo-icon" style="background:none; padding:0;">
+      <img src="xiaomi7.png" alt="Xiaomi" style="width:36px;height:36px;object-fit:contain;border-radius:7px;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div style="display:none;width:36px;height:36px;background:#FF6900;border-radius:7px;align-items:center;justify-content:center;font-weight:bold;color:white;font-size:13px;">mi</div>
+    </div>
+    <div>
+      <div class="logo-text">Xiaomi Feature Hub</div>
+      <div class="logo-sub">Dành cho nhân viên bán hàng</div>
+    </div>
+  </a>
+  <div class="header-right" id="count-display">Đang tải...</div>
+</header>
+
+<div class="hero">
+  <h1>Tra cứu <span>tính năng</span><br>điện thoại nhanh chóng</h1>
+  <p>Tìm kiếm hướng dẫn tính năng để tư vấn khách hàng chính xác hơn</p>
+  <div class="search-wrap">
+    <svg class="search-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8">
+      <circle cx="7.5" cy="7.5" r="5.5"/><line x1="12" y1="12" x2="16" y2="16"/>
+    </svg>
+    <input type="text" id="search-input" placeholder="Tìm tính năng, ví dụ: chia đôi màn hình..." autocomplete="off" />
+    <button class="clear-btn" id="clear-btn" onclick="clearSearch()">×</button>
+  </div>
+</div>
+
+<div class="filters" id="filters">
+  <button class="filter-btn active" onclick="setFilter('all', this)">Tất cả</button>
+  <button class="filter-btn" onclick="setFilter('Màn hình', this)">Màn hình</button>
+  <button class="filter-btn" onclick="setFilter('Camera', this)">Camera</button>
+  <button class="filter-btn" onclick="setFilter('Pin', this)">Pin</button>
+  <button class="filter-btn" onclick="setFilter('Cài đặt', this)">Cài đặt</button>
+  <button class="filter-btn" onclick="setFilter('Kết nối', this)">Kết nối</button>
+  <button class="filter-btn" onclick="setFilter('Khác', this)">Khác</button>
+</div>
+
+<div class="trending-bar" id="trending-bar">
+  <div class="trending-label">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1l1.2 2.4L10 4l-2 2 .5 3L6 7.5 3.5 9 4 6 2 4l2.8-.6L6 1z" fill="#FF6900"/></svg>
+    Tìm nhiều nhất:
+  </div>
+  <div id="trending-tags" style="display: flex; gap: 8px;"></div>
+</div>
+
+<div class="main">
+  <div class="results-info" id="results-info"></div>
+  <div id="results"></div>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<script>
+const SHEET_ID = '1_BpsY4izWhR9xyKww9vRviUIs7icMIfVxeXXZEZePMA';
+const API = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=`;
+
+// BẠN DÁN LINK WEB APP VÀO ĐÂY (GIỮ NGUYÊN CODE BÊN GOOGLE APP SCRIPT Ở BƯỚC TRƯỚC)
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwcq8pBSmY2fXjcQKjJxjaL9PE0w1StAcika_18K1q1p7_v0Xqmz3arJ26XH470DLS7/exec';
+
+let features = [], steps = [];
+let activeFilter = 'all', searchQ = '';
+const ITEMS_PER_PAGE = 5;
+let currentPage = 1;
+
+const catMap = {
+  'Màn hình': { cls: 'man-hinh', icon: '📱' },
+  'Camera': { cls: 'camera', icon: '📷' },
+  'Pin': { cls: 'pin', icon: '🔋' },
+  'Cài đặt': { cls: 'cai-dat', icon: '⚙️' },
+  'Kết nối': { cls: 'ket-noi', icon: '📶' },
+  'Khác': { cls: 'khac', icon: '✨' },
+};
+
+function getCat(name) { return catMap[name] || { cls: 'khac', icon: '✨' }; }
+
+async function fetchSheet(sheetName) {
+  const res = await fetch(API + encodeURIComponent(sheetName));
+  const text = await res.text();
+  const json = JSON.parse(text.substring(47).slice(0, -2));
+  const rawCols = json.table.cols.map(c => c.label ? c.label.trim() : '');
+  const rows = json.table.rows;
+  if (!rows || rows.length === 0) return [];
+
+  const isRealHeader = rawCols.some(c => c && c.length > 1 && !/^[A-Z]$/.test(c));
+  let cols, dataRows;
+  
+  if (isRealHeader) {
+    cols = rawCols; dataRows = rows;
+  } else {
+    const headerRow = rows[0];
+    cols = headerRow.c.map(cell => cell && cell.v ? String(cell.v).trim() : '');
+    dataRows = rows.slice(1);
+  }
+
+  return dataRows.map(r => {
+    const obj = {};
+    cols.forEach((col, i) => { if (col) obj[col] = r.c[i] ? String(r.c[i].v ?? '').trim() : ''; });
+    return obj;
+  }).filter(r => Object.values(r).some(v => v !== ''));
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function init() {
+  try {
+    [features, steps] = await Promise.all([fetchSheet('Feature'), fetchSheet('Steps')]);
+    if (!features.length) throw new Error('empty');
+  } catch(e) {
+    console.error("Lỗi tải data:", e);
+  }
+
+  document.getElementById('count-display').textContent = features.length + ' tính năng';
+  renderTrending();
+  render();
+}
+
+// Hàm gửi tín hiệu cộng điểm về Google Sheet
+function trackSearchAndClick(featureName) {
+  if (!featureName) return;
+  
+  if (typeof GAS_URL !== 'undefined' && GAS_URL.startsWith('https://script.google.com/')) {
+    console.log("Đang đếm 1 lượt xem cho tính năng:", featureName);
+    
+    fetch(GAS_URL + '?featureName=' + encodeURIComponent(featureName))
+      .then(res => res.text())
+      .then(data => console.log('Kết quả đếm:', data))
+      .catch(e => console.error('Lỗi khi gửi tracking:', e));
+  }
+}
+
+function renderTrending() {
+  const container = document.getElementById('trending-tags');
+  container.innerHTML = '';
+  
+  let sortedFeatures = [...features].sort((a, b) => {
+      let countA = parseInt(a['Lượt tìm kiếm'] || 0);
+      let countB = parseInt(b['Lượt tìm kiếm'] || 0);
+      return countB - countA;
+  });
+
+  const topFeatures = sortedFeatures.slice(0, 5);
+  topFeatures.forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'trend-tag';
+    btn.textContent = f['Tính năng'];
+    btn.onclick = () => { 
+      document.getElementById('search-input').value = f['Tính năng']; 
+      onSearch(); 
+      // Click vào nút Trending cũng là 1 hành động "chọn xem tính năng" -> Đếm 1 lượt
+      trackSearchAndClick(f['Tính năng']); 
+    };
+    container.appendChild(btn);
+  });
+}
+
+function getSteps(featureId) {
+  return steps.filter(s => s['feature_id'] === featureId).sort((a, b) => {
+    return (parseInt(String(a['step_order']||'').replace(/\D/g,'')) || 0) - (parseInt(String(b['step_order']||'').replace(/\D/g,'')) || 0);
+  });
+}
+
+function render() {
+  const q = searchQ.toLowerCase().trim();
+  let list = features.filter(f => {
+    const ten = String(f['Tính năng'] || '').toLowerCase();
+    const congDung = String(f['Công dụng'] || '').toLowerCase();
+    const danhMuc = String(f['Danh mục'] || '').toLowerCase();
+    const matchQ = !q || ten.includes(q) || congDung.includes(q) || danhMuc.includes(q);
+    const matchF = activeFilter === 'all' || f['Danh mục'] === activeFilter;
+    return matchQ && matchF;
+  });
+
+  const totalItems = list.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const pageList = list.slice(startIndex, endIndex);
+
+  const infoText = q || activeFilter !== 'all' ? `Tìm thấy ${totalItems} kết quả` : `Tổng cộng ${totalItems} tính năng`;
+  document.getElementById('results-info').innerHTML = `
+    <span>${infoText}</span>
+    ${totalPages > 1 ? `<span>Trang ${currentPage}/${totalPages}</span>` : ''}
+  `;
+
+  if (!pageList.length) {
+    document.getElementById('results').innerHTML = `<div class="state-box"><div class="icon">🔍</div><p>Không tìm thấy tính năng phù hợp.<br>Thử từ khóa khác nhé.</p></div>`;
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  document.getElementById('results').innerHTML = pageList.map(f => {
+    const cat = getCat(f['Danh mục']);
+    const fid = f['feature_id'] || '';
+    const fSteps = getSteps(fid);
+
+    const stepsHTML = fSteps.map((s, i) => {
+      const nd = s['Nội dung'] || s['Nội dung bước'] || s['noi_dung'] || '';
+      return `<div class="step"><div class="step-num">${i+1}</div><div class="step-text">${escHtml(nd)}</div></div>`;
+    }).join('');
+
+    const noteVal = f['Lưu ý/Tên người đóng góp tính năng'] || f['Lưu ý'] || '';
+    const noteHTML = noteVal ? `<div class="note-box"><strong style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:#4A90D9;">Lưu ý</strong><br>${escHtml(noteVal)}</div>` : '';
+    const productVal = f['Dòng sản phẩm áp dụng'] || '';
+    const productHTML = productVal && productVal !== 'Tất cả' ? `<div class="product-box"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="#888" stroke-width="1.2"/><path d="M4 6h4M6 4v4" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>Áp dụng: <strong>${escHtml(productVal)}</strong></div>` : '';
+
+    return `<div class="card" id="card-${escHtml(fid)}">
+      <!-- QUAN TRỌNG: Chỉ truyền ID vào hàm onclick, Tên sẽ được tra ngược lại để đảm bảo an toàn 100% -->
+      <div class="card-header" onclick="toggleCard('${escHtml(fid)}')">
+        <div class="cat-dot cat-${cat.cls}">${cat.icon}</div>
+        <div class="card-info">
+          <div class="card-title">${escHtml(f['Tính năng'])}</div>
+          <div class="card-meta"><span class="badge badge-${cat.cls}">${escHtml(f['Danh mục'])}</span></div>
+          <div class="card-desc">${escHtml(f['Công dụng'])}</div>
+        </div>
+        <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6l4 4 4-4"/></svg>
+      </div>
+      <div class="card-body">
+        <div class="card-body-inner">
+          ${fSteps.length ? `<div class="steps-title">Các bước thực hiện</div>${stepsHTML}` : ''}
+          ${noteHTML}
+          ${productHTML}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  const pagContainer = document.getElementById('pagination');
+  if (totalPages <= 1) {
+    pagContainer.innerHTML = '';
+    return;
+  }
+
+  let html = `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">«</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+        html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+    } else if (i === currentPage - 2 || i === currentPage + 2) {
+        html += `<span style="color:#888;">...</span>`;
+    }
+  }
+  html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">»</button>`;
+  pagContainer.innerHTML = html;
+}
+
+function changePage(page) {
+  currentPage = page;
+  render();
+  document.getElementById('filters').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// LOGIC ĐẾM VIEW MỚI
+function toggleCard(id) {
+  const card = document.getElementById('card-' + id);
+  const isOpen = card.classList.contains('open');
+  
+  // Đóng tất cả các thẻ đang mở khác (tùy chọn UI)
+  document.querySelectorAll('.card.open').forEach(c => c.classList.remove('open'));
+  
+  if (!isOpen) {
+    // Mở thẻ này lên
+    card.classList.add('open');
+    
+    // Dùng ID để tìm ra ĐÚNG CHUẨN dòng dữ liệu trong mảng features
+    const featureData = features.find(f => f['feature_id'] === id);
+    
+    // Nếu tìm thấy, gửi đúng 100% cái "Tính năng" đó về Google Sheet
+    if (featureData && featureData['Tính năng']) {
+      trackSearchAndClick(featureData['Tính năng']);
+    }
+  }
+}
+
+function onSearch() {
+  searchQ = document.getElementById('search-input').value;
+  document.getElementById('clear-btn').style.display = searchQ ? 'block' : 'none';
+  currentPage = 1; 
+  render();
+  // Gõ tìm kiếm ở đây sẽ KHÔNG HỀ GỬI DỮ LIỆU ĐẾM gì lên Google Sheet nữa
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  searchQ = '';
+  document.getElementById('clear-btn').style.display = 'none';
+  currentPage = 1;
+  render();
+}
+
+function setFilter(cat, btn) {
+  activeFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentPage = 1;
+  render();
+}
+
+document.getElementById('search-input').addEventListener('input', onSearch);
+document.getElementById('search-input').addEventListener('keydown', e => { if(e.key === 'Escape') clearSearch(); });
+
+init();
+</script>
+<footer style="background:var(--dark);padding:24px;text-align:center;margin-top:32px;border-top:1px solid #222;">
+  <div style="font-size:12px;color:#555;margin-bottom:4px;">Thiết kế &amp; phát triển bởi</div>
+  <div style="font-size:14px;font-weight:600;color:var(--white);">Trần Thanh Tú</div>
+  <div style="font-size:12px;color:var(--orange);margin-top:2px;">Regional Trainer · Xiaomi Việt Nam</div>
+  <div style="font-size:11px;color:#444;margin-top:12px;">© 2026 Hãy cùng nhau đóng góp tính năng để giúp ích cho mọi người dễ tra cứu</div>
+</footer>
+</body>
+</html>
