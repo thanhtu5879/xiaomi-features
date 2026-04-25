@@ -196,8 +196,8 @@
 const SHEET_ID = '1_BpsY4izWhR9xyKww9vRviUIs7icMIfVxeXXZEZePMA';
 const API = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=`;
 
-// BẠN DÁN LINK WEB APP VÀO ĐÂY (GIỮ NGUYÊN CODE BÊN GOOGLE APP SCRIPT Ở BƯỚC TRƯỚC)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwcq8pBSmY2fXjcQKjJxjaL9PE0w1StAcika_18K1q1p7_v0Xqmz3arJ26XH470DLS7/exec';
+// BẠN DÁN LINK WEB APP VÀO ĐÂY (VÀ TẠO BẢN DEPLOY MỚI NHÉ)
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw2bfXfHR_XYjwylPxrefeXIKxXePz0mviyR-IFdc-TLq1Da5y7FbskA4hkwSUuuHvV/exec';
 
 let features = [], steps = [];
 let activeFilter = 'all', searchQ = '';
@@ -249,6 +249,15 @@ async function init() {
   try {
     [features, steps] = await Promise.all([fetchSheet('Feature'), fetchSheet('Steps')]);
     if (!features.length) throw new Error('empty');
+    
+    // BẢO VỆ UI: Tự động cấp ID cho tính năng nếu Google Sheet bị trống cột feature_id
+    // Điều này giúp web không bao giờ bị liệt khi nhấp mở tính năng
+    features.forEach((f, index) => {
+      if (!f['feature_id']) {
+        f['feature_id'] = 'AUTO_ID_' + index;
+      }
+    });
+
   } catch(e) {
     console.error("Lỗi tải data:", e);
   }
@@ -263,12 +272,12 @@ function trackSearchAndClick(featureName) {
   if (!featureName) return;
   
   if (typeof GAS_URL !== 'undefined' && GAS_URL.startsWith('https://script.google.com/')) {
-    console.log("Đang đếm 1 lượt xem cho tính năng:", featureName);
-    
-    fetch(GAS_URL + '?featureName=' + encodeURIComponent(featureName))
-      .then(res => res.text())
-      .then(data => console.log('Kết quả đếm:', data))
-      .catch(e => console.error('Lỗi khi gửi tracking:', e));
+    // SỬA LỖI ĐƠ WEB: Bắt buộc dùng mode 'no-cors' để vượt tường lửa trình duyệt (CORS)
+    // Nếu thiếu, request sẽ bị chặn và báo lỗi đỏ, làm kẹt luồng JS gây đơ màn hình.
+    fetch(GAS_URL + '?featureName=' + encodeURIComponent(featureName), {
+      method: 'GET',
+      mode: 'no-cors' 
+    }).catch(e => console.error('Lỗi khi gửi tracking:', e));
   }
 }
 
@@ -290,7 +299,6 @@ function renderTrending() {
     btn.onclick = () => { 
       document.getElementById('search-input').value = f['Tính năng']; 
       onSearch(); 
-      // Click vào nút Trending cũng là 1 hành động "chọn xem tính năng" -> Đếm 1 lượt
       trackSearchAndClick(f['Tính năng']); 
     };
     container.appendChild(btn);
@@ -336,7 +344,7 @@ function render() {
 
   document.getElementById('results').innerHTML = pageList.map(f => {
     const cat = getCat(f['Danh mục']);
-    const fid = f['feature_id'] || '';
+    const fid = f['feature_id']; // Bây giờ fid luôn luôn tồn tại nhờ có hàm bọc AUTO_ID bên trên
     const fSteps = getSteps(fid);
 
     const stepsHTML = fSteps.map((s, i) => {
@@ -350,7 +358,6 @@ function render() {
     const productHTML = productVal && productVal !== 'Tất cả' ? `<div class="product-box"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="#888" stroke-width="1.2"/><path d="M4 6h4M6 4v4" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>Áp dụng: <strong>${escHtml(productVal)}</strong></div>` : '';
 
     return `<div class="card" id="card-${escHtml(fid)}">
-      <!-- QUAN TRỌNG: Chỉ truyền ID vào hàm onclick, Tên sẽ được tra ngược lại để đảm bảo an toàn 100% -->
       <div class="card-header" onclick="toggleCard('${escHtml(fid)}')">
         <div class="cat-dot cat-${cat.cls}">${cat.icon}</div>
         <div class="card-info">
@@ -425,7 +432,6 @@ function onSearch() {
   document.getElementById('clear-btn').style.display = searchQ ? 'block' : 'none';
   currentPage = 1; 
   render();
-  // Gõ tìm kiếm ở đây sẽ KHÔNG HỀ GỬI DỮ LIỆU ĐẾM gì lên Google Sheet nữa
 }
 
 function clearSearch() {
