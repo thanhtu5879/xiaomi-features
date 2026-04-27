@@ -128,6 +128,44 @@ header { background:var(--dark); padding:0 24px; display:flex; align-items:cente
 .badge-he-thong{background:#EDE8FB;color:#4A2D9C;} .badge-hieu-nang{background:#FCF0E8;color:#8B4513;}
 .badge-tien-ich{background:#E8F8FC;color:#0E6E8A;}
 
+/* DEVICE FILTER */
+.device-bar { background:var(--white); padding:8px 24px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border); overflow-x:auto; scrollbar-width:none; }
+.device-bar::-webkit-scrollbar { display:none; }
+.device-label { font-size:11px; color:var(--gray); white-space:nowrap; font-weight:500; }
+.device-btn { flex-shrink:0; padding:5px 12px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--gray); font-size:12px; font-family:'Be Vietnam Pro',sans-serif; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+.device-btn:hover { border-color:var(--orange); color:var(--orange); }
+.device-btn.active { background:var(--dark); border-color:var(--dark); color:var(--white); font-weight:500; }
+
+/* BÁO LỖI BUTTON trên card */
+.report-btn { margin-top:12px; padding:7px 14px; border-radius:var(--radius-sm); border:1px solid var(--border); background:transparent; color:var(--gray); font-size:12px; font-family:'Be Vietnam Pro',sans-serif; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.15s; }
+.report-btn:hover { border-color:#E53935; color:#E53935; background:#FFF5F5; }
+
+/* MODAL BÁO LỖI */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; display:flex; align-items:center; justify-content:center; padding:16px; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+.modal-overlay.open { opacity:1; pointer-events:auto; }
+.modal { background:var(--white); border-radius:var(--radius); width:100%; max-width:440px; padding:24px; transform:translateY(20px); transition:transform 0.2s; }
+.modal-overlay.open .modal { transform:translateY(0); }
+.modal-title { font-size:16px; font-weight:600; color:var(--dark); margin-bottom:4px; }
+.modal-sub { font-size:13px; color:var(--gray); margin-bottom:16px; }
+.modal-feature { font-size:13px; font-weight:500; color:var(--orange); background:var(--orange-light); padding:6px 12px; border-radius:var(--radius-sm); margin-bottom:16px; display:inline-block; }
+.modal-label { font-size:12px; font-weight:500; color:var(--dark); margin-bottom:8px; }
+.modal-checks { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+.modal-check { display:flex; align-items:center; gap:10px; cursor:pointer; }
+.modal-check input { width:16px; height:16px; accent-color:var(--orange); cursor:pointer; }
+.modal-check span { font-size:13px; color:var(--dark); }
+.modal-textarea { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-family:'Be Vietnam Pro',sans-serif; color:var(--dark); resize:vertical; min-height:80px; outline:none; transition:border-color 0.2s; }
+.modal-textarea:focus { border-color:var(--orange); }
+.modal-textarea::placeholder { color:#BBB; }
+.modal-actions { display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
+.btn-cancel { padding:9px 18px; border-radius:var(--radius-sm); border:1px solid var(--border); background:transparent; color:var(--gray); font-size:13px; font-family:'Be Vietnam Pro',sans-serif; cursor:pointer; }
+.btn-cancel:hover { border-color:var(--gray); }
+.btn-submit { padding:9px 18px; border-radius:var(--radius-sm); border:none; background:var(--orange); color:var(--white); font-size:13px; font-weight:500; font-family:'Be Vietnam Pro',sans-serif; cursor:pointer; transition:opacity 0.15s; }
+.btn-submit:hover { opacity:0.85; }
+.btn-submit:disabled { opacity:0.5; cursor:not-allowed; }
+.modal-success { text-align:center; padding:16px 0 8px; }
+.modal-success .s-icon-big { font-size:40px; margin-bottom:12px; }
+.modal-success p { font-size:14px; color:var(--gray); }
+
 /* RESPONSIVE */
 @media(max-width:600px){
   .hero{padding:20px 16px;}
@@ -144,6 +182,8 @@ header { background:var(--dark); padding:0 24px; display:flex; align-items:cente
   header{padding:0 14px;}
   .logo-sub{display:none;}
   .page-btn{min-width:34px;height:34px;font-size:13px;}
+  .device-bar{padding:8px 12px;}
+  .modal{padding:20px 16px;}
 }
 </style>
 </head>
@@ -215,7 +255,64 @@ header { background:var(--dark); padding:0 24px; display:flex; align-items:cente
   <div id="trending-tags" style="display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;"></div>
 </div>
 
-<!-- MAIN -->
+<!-- DEVICE FILTER -->
+<div class="device-bar" id="device-bar">
+  <span class="device-label">📱 Dòng máy:</span>
+  <button class="device-btn active" onclick="setDevice('all',this)">Tất cả</button>
+  <button class="device-btn" onclick="setDevice('Xiaomi Series',this)">Xiaomi Series</button>
+  <button class="device-btn" onclick="setDevice('Redmi Note',this)">Redmi Note</button>
+  <button class="device-btn" onclick="setDevice('Redmi',this)">Redmi</button>
+</div>
+
+<!-- MODAL BÁO LỖI -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div id="modal-form-content">
+      <div class="modal-title">Báo lỗi / Góp ý</div>
+      <div class="modal-sub">Giúp chúng tôi cải thiện nội dung tốt hơn. Bạn hãy điền đủ thông tin để được hỗ trợ nhanh nhất</div>
+      <div class="modal-feature" id="modal-feature-name"></div>
+
+      <div class="modal-label">Loại vấn đề:</div>
+      <div class="modal-checks">
+        <label class="modal-check">
+          <input type="checkbox" id="chk-wrong"> <span>Thông tin sai hoặc thiếu bước</span>
+        </label>
+        <label class="modal-check">
+          <input type="checkbox" id="chk-notwork"> <span>Tính năng không hoạt động trên máy của tôi</span>
+        </label>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div>
+          <div class="modal-label" style="margin-bottom:6px;">Model máy <span style="color:#E53935;">*</span></div>
+          <input type="text" id="modal-model" class="modal-textarea" style="min-height:unset;height:38px;resize:none;" placeholder="VD: Redmi Note 15"/>
+        </div>
+        <div>
+          <div class="modal-label" style="margin-bottom:6px;">Tên PC <span style="color:#E53935;">*</span></div>
+          <input type="text" id="modal-pc" class="modal-textarea" style="min-height:unset;height:38px;resize:none;" placeholder="Nguyễn Văn A"/>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <div class="modal-label" style="margin-bottom:6px;">Tên Trainer khu vực <span style="color:#E53935;">*</span></div>
+        <input type="text" id="modal-trainer" class="modal-textarea" style="min-height:unset;height:38px;resize:none;" placeholder="VD: Trần Thanh Tú"/>
+      </div>
+
+      <div class="modal-label">Góp ý thêm (tuỳ chọn):</div>
+      <textarea class="modal-textarea" id="modal-note" placeholder="Mô tả chi tiết vấn đề hoặc đề xuất của bạn..."></textarea>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModalDirect()">Huỷ</button>
+        <button class="btn-submit" id="btn-submit-report" onclick="submitReport()">Gửi báo cáo</button>
+      </div>
+    </div>
+    <div id="modal-success-content" class="modal-success" style="display:none;">
+      <div class="s-icon-big">✅</div>
+      <div style="font-size:15px;font-weight:600;color:var(--dark);margin-bottom:8px;">Đã gửi thành công!</div>
+      <p>Cảm ơn bạn đã góp ý. Nội dung sẽ được kiểm tra và cập nhật sớm.</p>
+      <button class="btn-submit" style="margin-top:16px;" onclick="closeModalDirect()">Đóng</button>
+    </div>
+  </div>
+</div>
 <div class="main">
   <div class="results-info" id="results-info"></div>
   <div id="results">
@@ -236,7 +333,7 @@ header { background:var(--dark); padding:0 24px; display:flex; align-items:cente
    CẤU HÌNH
 ══════════════════════════════════════════ */
 const SHEET_ID       = '1_BpsY4izWhR9xyKww9vRviUIs7icMIfVxeXXZEZePMA';
-const GAS_URL        = 'https://script.google.com/macros/s/AKfycbw0itqhB00WgZS-q6jbaxalgWwKIbsP8Kj-VGJohDzvpcqZUYvD_oO2lrDUB2zad2y1/exec';
+const GAS_URL        = 'https://script.google.com/macros/s/AKfycbxu3GitkeuESUc-MeU1hvDXWb4abYpLj745JwtEHHXHLudAaE9EOk-MHcmwtlcHLXCK/exec';
 const ITEMS_PER_PAGE = 4;
 // headers=1 → bắt buộc API chỉ đọc hàng 1 làm header, không gộp nhiều hàng
 const API = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=`;
@@ -247,9 +344,11 @@ const API = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:
 let features     = [];
 let steps        = [];
 let activeFilter = 'all';
+let activeDevice = 'all';
 let searchQ      = '';
 let currentPage  = 1;
 let usingDemo    = false;
+let currentReportFeature = '';
 
 /* ══════════════════════════════════════════
    CATEGORY MAP
@@ -416,9 +515,14 @@ function render() {
     const ten      = String(f['Tính năng'] ||'').toLowerCase();
     const congDung = String(f['Công dụng']  ||'').toLowerCase();
     const danhMuc  = String(f['Danh mục']   ||'').toLowerCase();
+    const dongMay  = String(f['Dòng sản phẩm áp dụng'] ||'').toLowerCase();
     const matchQ   = !q || ten.includes(q) || congDung.includes(q) || danhMuc.includes(q);
     const matchF   = activeFilter === 'all' || f['Danh mục'] === activeFilter;
-    return matchQ && matchF;
+    // Lọc dòng máy: "Tất cả" trong sheet → hiển thị cho mọi filter
+    const matchD   = activeDevice === 'all'
+      || dongMay.includes('tất cả')
+      || dongMay.includes(activeDevice.toLowerCase());
+    return matchQ && matchF && matchD;
   });
 
   const totalItems = list.length;
@@ -498,6 +602,13 @@ function render() {
             : '<div style="padding:14px 0 4px;color:#bbb;font-size:13px;">Chưa có hướng dẫn chi tiết.</div>'}
           ${noteHTML}
           ${productHTML}
+          <button class="report-btn" onclick="openModal('${escJS(tenTN)}')">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="6.5" cy="6.5" r="5.5"/>
+              <line x1="6.5" y1="4" x2="6.5" y2="7"/><circle cx="6.5" cy="9" r="0.6" fill="currentColor"/>
+            </svg>
+            Báo lỗi / Góp ý
+          </button>
         </div>
       </div>
     </div>`;
@@ -563,6 +674,95 @@ function applySearch(val) {
 }
 function clearSearch()       { applySearch(''); }
 function clearStickySearch() { applySearch(''); }
+
+function setDevice(device, btn) {
+  activeDevice = device;
+  document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentPage = 1;
+  render();
+}
+
+/* ══════════════════════════════════════════
+   MODAL BÁO LỖI
+══════════════════════════════════════════ */
+function openModal(featureName) {
+  currentReportFeature = featureName;
+  document.getElementById('modal-feature-name').textContent = featureName;
+  document.getElementById('modal-note').value    = '';
+  document.getElementById('modal-model').value   = '';
+  document.getElementById('modal-pc').value      = '';
+  document.getElementById('modal-trainer').value = '';
+  document.getElementById('chk-wrong').checked   = false;
+  document.getElementById('chk-notwork').checked = false;
+  document.getElementById('modal-form-content').style.display    = 'block';
+  document.getElementById('modal-success-content').style.display = 'none';
+  document.getElementById('btn-submit-report').disabled = false;
+  document.getElementById('btn-submit-report').textContent = 'Gửi báo cáo';
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  closeModalDirect();
+}
+
+function closeModalDirect() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function submitReport() {
+  const wrong   = document.getElementById('chk-wrong').checked;
+  const notwork = document.getElementById('chk-notwork').checked;
+  const note    = document.getElementById('modal-note').value.trim();
+  const model   = document.getElementById('modal-model').value.trim();
+  const pc      = document.getElementById('modal-pc').value.trim();
+  const trainer = document.getElementById('modal-trainer').value.trim();
+
+  // Validate bắt buộc
+  let hasError = false;
+  ['modal-model','modal-pc','modal-trainer'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el.value.trim()) {
+      el.style.borderColor = '#E53935';
+      hasError = true;
+      setTimeout(() => el.style.borderColor = '', 2500);
+    }
+  });
+  if (!wrong && !notwork && !note) {
+    document.getElementById('modal-note').style.borderColor = '#E53935';
+    hasError = true;
+    setTimeout(() => document.getElementById('modal-note').style.borderColor = '', 2500);
+  }
+  if (hasError) return;
+
+  const btn = document.getElementById('btn-submit-report');
+  btn.disabled = true;
+  btn.textContent = 'Đang gửi...';
+
+  const issues = [];
+  if (wrong)   issues.push('Thông tin sai hoặc thiếu bước');
+  if (notwork) issues.push('Tính năng không hoạt động');
+
+  const params = new URLSearchParams({
+    type        : 'report',
+    featureName : currentReportFeature,
+    issues      : issues.join('; '),
+    model       : model,
+    pc          : pc,
+    trainer     : trainer,
+    note        : note
+  });
+
+  fetch(`${GAS_URL}?${params.toString()}`, { method:'GET', mode:'no-cors' })
+    .catch(() => {})
+    .finally(() => {
+      document.getElementById('modal-form-content').style.display    = 'none';
+      document.getElementById('modal-success-content').style.display = 'block';
+    });
+}
 
 function setFilter(cat, btn) {
   activeFilter = cat;
