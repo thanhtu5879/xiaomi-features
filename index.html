@@ -153,9 +153,10 @@ header { background:var(--dark); padding:0 24px; display:flex; align-items:cente
 .modal-check { display:flex; align-items:center; gap:10px; cursor:pointer; }
 .modal-check input { width:16px; height:16px; accent-color:var(--orange); cursor:pointer; }
 .modal-check span { font-size:13px; color:var(--dark); }
-.modal-textarea { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-family:'Be Vietnam Pro',sans-serif; color:var(--dark); resize:vertical; min-height:80px; outline:none; transition:border-color 0.2s; }
+.modal-textarea, .modal-textarea select { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-family:'Be Vietnam Pro',sans-serif; color:var(--dark); resize:vertical; min-height:80px; outline:none; transition:border-color 0.2s; background:var(--white); }
 .modal-textarea:focus { border-color:var(--orange); }
 .modal-textarea::placeholder { color:#BBB; }
+select.modal-textarea { min-height:unset; height:38px; resize:none; cursor:pointer; appearance:auto; }
 .modal-actions { display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
 .btn-cancel { padding:9px 18px; border-radius:var(--radius-sm); border:1px solid var(--border); background:transparent; color:var(--gray); font-size:13px; font-family:'Be Vietnam Pro',sans-serif; cursor:pointer; }
 .btn-cancel:hover { border-color:var(--gray); }
@@ -269,7 +270,7 @@ header { background:var(--dark); padding:0 24px; display:flex; align-items:cente
   <div class="modal" id="modal">
     <div id="modal-form-content">
       <div class="modal-title">Báo lỗi / Góp ý</div>
-      <div class="modal-sub">Giúp chúng tôi cải thiện nội dung tốt hơn. Bạn hãy điền đủ thông tin để được hỗ trợ nhanh nhất</div>
+      <div class="modal-sub">Giúp chúng tôi cải thiện nội dung tốt hơn</div>
       <div class="modal-feature" id="modal-feature-name"></div>
 
       <div class="modal-label">Loại vấn đề:</div>
@@ -294,8 +295,22 @@ header { background:var(--dark); padding:0 24px; display:flex; align-items:cente
       </div>
 
       <div style="margin-bottom:12px;">
-        <div class="modal-label" style="margin-bottom:6px;">Tên Trainer khu vực <span style="color:#E53935;">*</span></div>
-        <input type="text" id="modal-trainer" class="modal-textarea" style="min-height:unset;height:38px;resize:none;" placeholder="VD: Trần Thanh Tú"/>
+        <div class="modal-label" style="margin-bottom:6px;">Region <span style="color:#E53935;">*</span></div>
+        <select id="modal-region" class="modal-textarea" style="min-height:unset;height:38px;resize:none;cursor:pointer;" onchange="onRegionChange()">
+          <option value="">-- Chọn Region --</option>
+        </select>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div class="modal-label" style="margin-bottom:6px;">Sub Region <span style="color:#E53935;">*</span></div>
+        <select id="modal-subregion" class="modal-textarea" style="min-height:unset;height:38px;resize:none;cursor:pointer;" onchange="onSubRegionChange()" disabled>
+          <option value="">-- Chọn Sub Region --</option>
+        </select>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div class="modal-label" style="margin-bottom:6px;">Tên Trainer <span style="color:#E53935;">*</span></div>
+        <select id="modal-trainer" class="modal-textarea" style="min-height:unset;height:38px;resize:none;cursor:pointer;" disabled>
+          <option value="">-- Chọn Trainer --</option>
+        </select>
       </div>
 
       <div class="modal-label">Góp ý thêm (tuỳ chọn):</div>
@@ -343,6 +358,7 @@ const API = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:
 ══════════════════════════════════════════ */
 let features     = [];
 let steps        = [];
+let trainers     = [];
 let activeFilter = 'all';
 let activeDevice = 'all';
 let searchQ      = '';
@@ -645,8 +661,101 @@ function changePage(page) {
 }
 
 /* ══════════════════════════════════════════
-   TOGGLE CARD
+   TRAINER DATA — Region > Sub Region > Trainer
 ══════════════════════════════════════════ */
+const TRAINER_DATA = {
+  "Central": {
+    "Central 1": ["Lê Thị Mỹ Hạnh","Nguyễn Đào Như Ngọc"],
+    "Central 2": ["Hồ Vũ Trường","Nguyễn Đào Như Ngọc"]
+  },
+  "Central Highland": {
+    "Central Highland 1": ["Nguyễn Thanh Nam","Nguyễn Văn Anh Thiên"],
+    "Central Highland 2": ["Huỳnh Hiếu Tiến","Ngô Hoàng Vương"],
+    "South Central Coast": ["Phan Đăng Bảo","Võ Dương Anh Phúc"]
+  },
+  "Ha Noi": {
+    "Ha Noi 1": ["Hồ Xuân Hương","Nguyễn Văn Thành","Nguyễn Xuân Cảnh","Phạm Minh Đại"],
+    "Ha Noi 2": ["Nguyễn Xuân Cảnh","Phạm Minh Đại"],
+    "Ha Noi 3": ["Nguyễn Mạnh Hùng","Nguyễn Văn Thành"]
+  },
+  "HCM": {
+    "HCM 1": ["Bùi Huy Hoàng","Nguyễn Văn Nhẩn"],
+    "HCM 2": ["Lê Văn Quốc","Nguyễn Chánh Tâm"],
+    "HCM 3": ["Hoàng Thị Quỳnh Như","Trương Tố Trân"],
+    "HCM 4": ["Hoàng Gia Long","Phạm Chí Phong"]
+  },
+  "Mekong North": {
+    "Mekong North 1": ["Lê Tiến Đạt","Phan Thị Hằng","Trần Quốc Trí","Trần Thị Cẩm Tú"],
+    "Mekong North 2": ["Nguyễn Nhật Trường","Trần Thị Cẩm Tú","Trần Thị Mỹ Duyên"]
+  },
+  "Mekong South": {
+    "Mekong South 1": ["Lê Đức Huy","Lê Hoàng Phúc","Tô Văn Chông"],
+    "Mekong South 2": ["Hoàng Kim Quy","Nguyễn Thanh Trúc","Phan Thanh Phong"]
+  },
+  "North Central Coast": {
+    "North Central Coast 1": ["Đinh Phi Hùng","Lê Thị Trâm"],
+    "North Central Coast 2": ["Tạ Văn Minh","Trịnh Thị Nhung"]
+  },
+  "North East": {
+    "North East 1": ["Chu Ngọc Linh","Nguyễn Đăng Lâm"],
+    "North East 2": ["Đỗ Văn Giang","Lê Vũ Đức Thịnh"]
+  },
+  "Red River Delta": {
+    "Red River Delta 1": ["Mai Quốc Anh","Phạm Ngọc Khánh"],
+    "Red River Delta 2": ["Bùi Văn Tùng","Lê Thị Giang"]
+  },
+  "South East": {
+    "South East 1": ["Mai Thị Gái","Võ Thị Dáng My"],
+    "South East 2": ["Nguyễn Hữu Đức","Nguyễn Khắc Toàn"],
+    "South East 3": ["Nguyễn Tấn Toàn","Nguyễn Thị Minh Thu"],
+    "South East 4": ["Trần Thanh Tú","Võ Thị Dáng My"]
+  }
+};
+
+function initTrainerDropdowns() {
+  const sel = document.getElementById('modal-region');
+  Object.keys(TRAINER_DATA).sort().forEach(region => {
+    const opt = document.createElement('option');
+    opt.value = region; opt.textContent = region;
+    sel.appendChild(opt);
+  });
+}
+
+function onRegionChange() {
+  const region = document.getElementById('modal-region').value;
+  const subSel = document.getElementById('modal-subregion');
+  const trSel  = document.getElementById('modal-trainer');
+
+  // Reset sub region
+  subSel.innerHTML = '<option value="">-- Chọn Sub Region --</option>';
+  subSel.disabled = !region;
+  // Reset trainer
+  trSel.innerHTML = '<option value="">-- Chọn Trainer --</option>';
+  trSel.disabled = true;
+
+  if (!region) return;
+  Object.keys(TRAINER_DATA[region]).sort().forEach(sub => {
+    const opt = document.createElement('option');
+    opt.value = sub; opt.textContent = sub;
+    subSel.appendChild(opt);
+  });
+}
+
+function onSubRegionChange() {
+  const region = document.getElementById('modal-region').value;
+  const sub    = document.getElementById('modal-subregion').value;
+  const trSel  = document.getElementById('modal-trainer');
+
+  trSel.innerHTML = '<option value="">-- Chọn Trainer --</option>';
+  trSel.disabled = !sub;
+  if (!region || !sub) return;
+
+  (TRAINER_DATA[region][sub] || []).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    trSel.appendChild(opt);
+  });
+}
 function toggleCard(fid, featureName) {
   const card = document.getElementById('card-' + fid);
   if (!card) return;
@@ -689,10 +798,12 @@ function setDevice(device, btn) {
 function openModal(featureName) {
   currentReportFeature = featureName;
   document.getElementById('modal-feature-name').textContent = featureName;
-  document.getElementById('modal-note').value    = '';
-  document.getElementById('modal-model').value   = '';
-  document.getElementById('modal-pc').value      = '';
-  document.getElementById('modal-trainer').value = '';
+  document.getElementById('modal-note').value  = '';
+  document.getElementById('modal-model').value = '';
+  document.getElementById('modal-pc').value    = '';
+  // Reset cascade
+  document.getElementById('modal-region').value = '';
+  onRegionChange(); // tự reset sub region và trainer
   document.getElementById('chk-wrong').checked   = false;
   document.getElementById('chk-notwork').checked = false;
   document.getElementById('modal-form-content').style.display    = 'block';
@@ -719,22 +830,32 @@ function submitReport() {
   const note    = document.getElementById('modal-note').value.trim();
   const model   = document.getElementById('modal-model').value.trim();
   const pc      = document.getElementById('modal-pc').value.trim();
+  const region  = document.getElementById('modal-region').value.trim();
+  const sub     = document.getElementById('modal-subregion').value.trim();
   const trainer = document.getElementById('modal-trainer').value.trim();
 
-  // Validate bắt buộc
   let hasError = false;
-  ['modal-model','modal-pc','modal-trainer'].forEach(id => {
+  // Validate text inputs
+  ['modal-model','modal-pc'].forEach(id => {
     const el = document.getElementById(id);
     if (!el.value.trim()) {
-      el.style.borderColor = '#E53935';
-      hasError = true;
+      el.style.borderColor = '#E53935'; hasError = true;
       setTimeout(() => el.style.borderColor = '', 2500);
     }
   });
+  // Validate selects
+  ['modal-region','modal-subregion','modal-trainer'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el.value) {
+      el.style.outline = '2px solid #E53935'; hasError = true;
+      setTimeout(() => el.style.outline = '', 2500);
+    }
+  });
+  // Validate ít nhất 1 loại vấn đề hoặc góp ý
   if (!wrong && !notwork && !note) {
-    document.getElementById('modal-note').style.borderColor = '#E53935';
-    hasError = true;
-    setTimeout(() => document.getElementById('modal-note').style.borderColor = '', 2500);
+    const el = document.getElementById('modal-note');
+    el.style.borderColor = '#E53935'; hasError = true;
+    setTimeout(() => el.style.borderColor = '', 2500);
   }
   if (hasError) return;
 
@@ -752,6 +873,8 @@ function submitReport() {
     issues      : issues.join('; '),
     model       : model,
     pc          : pc,
+    region      : region,
+    subregion   : sub,
     trainer     : trainer,
     note        : note
   });
@@ -805,7 +928,6 @@ document.getElementById('clear-btn').addEventListener('click', clearSearch);
 ══════════════════════════════════════════ */
 async function init() {
   try {
-    // Fetch 2 sheet độc lập — Steps lỗi không làm mất Feature
     const [featRes, stepsRes] = await Promise.allSettled([
       fetchSheet('Feature'),
       fetchSheet('Steps')
@@ -817,13 +939,7 @@ async function init() {
     } else {
       throw new Error('Feature sheet empty or failed');
     }
-
-    if (stepsRes.status === 'fulfilled' && stepsRes.value.length) {
-      steps = stepsRes.value;
-    } else {
-      console.warn('Steps sheet failed, steps will be empty');
-      steps = [];
-    }
+    steps = (stepsRes.status === 'fulfilled') ? stepsRes.value : [];
 
   } catch(e) {
     console.warn('Fallback sang dữ liệu mẫu:', e.message);
@@ -832,7 +948,6 @@ async function init() {
     usingDemo = true;
   }
 
-  // Tự cấp ID nếu bị bỏ trống
   features.forEach((f,i) => {
     if (!f['feature_id'] || !f['feature_id'].trim()) f['feature_id'] = 'AUTO_' + i;
   });
@@ -840,6 +955,7 @@ async function init() {
   document.getElementById('count-display').textContent =
     features.length + ' tính năng' + (usingDemo ? ' (mẫu)' : '');
 
+  initTrainerDropdowns(); // khởi tạo dropdown Region
   renderTrending();
   render();
 }
