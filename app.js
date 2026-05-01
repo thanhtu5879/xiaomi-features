@@ -196,6 +196,7 @@ function normalize(str) {
     .replace(/đ/g, 'd').replace(/Đ/g, 'D')
     .toLowerCase().trim();
 }
+
 function escHtml(str) {
   return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
@@ -239,20 +240,19 @@ function renderTrending() {
 }
 
 function render() {
- 
+  const q    = searchQ.toLowerCase().trim();
+  const nq   = normalize(searchQ);
   const list = features.filter(f => {
     const status = String(f['Status'] || '').toLowerCase().trim();
     if (status === 'archived' || status === 'draft') return false;
-    const ten      = String(f['Tính năng'] ||'').toLowerCase();
-    const congDung = String(f['Công dụng']  ||'').toLowerCase();
-    const danhMuc  = String(f['Danh mục']   ||'').toLowerCase();
+    const ten      = String(f['Tính năng'] ||'');
+    const congDung = String(f['Công dụng']  ||'');
+    const danhMuc  = String(f['Danh mục']   ||'');
     const dongMay  = String(f['Dòng sản phẩm áp dụng'] ||'').toLowerCase();
-   const q      = searchQ.toLowerCase().trim();
-const nq     = normalize(searchQ);
-const matchQ = !nq
-  || normalize(ten).includes(nq)
-  || normalize(congDung).includes(nq)
-  || normalize(danhMuc).includes(nq);
+    const matchQ   = !nq
+      || normalize(ten).includes(nq)
+      || normalize(congDung).includes(nq)
+      || normalize(danhMuc).includes(nq);
     const matchF   = activeFilter === 'all' || f['Danh mục'] === activeFilter;
     const matchD   = activeDevice === 'all' || dongMay.includes('tất cả') || dongMay.includes(activeDevice.toLowerCase());
     return matchQ && matchF && matchD;
@@ -517,12 +517,9 @@ document.getElementById('clear-btn').addEventListener('click', clearSearch);
 /* ── INIT ── */
 async function init() {
   try {
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), 8000)
-    );
     const [featRes, stepsRes] = await Promise.allSettled([
-      Promise.race([fetchSheet('Feature'), timeout]),
-      Promise.race([fetchSheet('Steps'), timeout])
+      fetchSheet('Feature'),
+      fetchSheet('Steps')
     ]);
     if (featRes.status === 'fulfilled' && featRes.value.length) {
       features = featRes.value; usingDemo = false;
