@@ -514,23 +514,159 @@ document.getElementById('search-input').addEventListener('input',   e => applySe
 document.getElementById('search-input').addEventListener('keydown', e => { if(e.key==='Escape') clearSearch(); });
 document.getElementById('clear-btn').addEventListener('click', clearSearch);
 
+/* ══════════════════════════════════════════
+   MODULE 5 — CACHE (localStorage 2h)
+══════════════════════════════════════════ */
+const CACHE_KEY = 'xiaomi_hub_cache';
+const CACHE_TTL = 2 * 60 * 60 * 1000; // 2 giờ tính bằng ms
+
+function saveCache(featData, stepsData) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      features: featData,
+      steps: stepsData,
+      at: Date.now()
+    }));
+  } catch(e) { /* localStorage đầy hoặc bị chặn → bỏ qua */ }
+}
+
+function loadCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const cache = JSON.parse(raw);
+    if (!cache.at || Date.now() - cache.at > CACHE_TTL) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    if (!cache.features || !cache.features.length) return null;
+    return cache;
+  } catch(e) { return null; }
+}
+
+function clearCache() {
+  try { localStorage.removeItem(CACHE_KEY); } catch(e) {}
+}
+
 /* ── INIT ── */
 async function init() {
+  // Thử đọc cache trước
+  const cache = loadCache();
+  if (cache) {
+    features  = cache.features;
+    steps     = cache.steps || [];
+    usingDemo = false;
+    // Render ngay từ cache — không cần chờ fetch
+    afterLoad();
+    // Fetch ngầm để cập nhật cache (không block UI)
+    refreshCacheInBackground();
+    return;
+  }
+
+  // Không có cache → fetch bình thường
   try {
     const [featRes, stepsRes] = await Promise.allSettled([
       fetchSheet('Feature'),
       fetchSheet('Steps')
     ]);
     if (featRes.status === 'fulfilled' && featRes.value.length) {
-      features = featRes.value; usingDemo = false;
+      features  = featRes.value; usingDemo = false;
+      steps     = (stepsRes.status === 'fulfilled') ? stepsRes.value : [];
+      saveCache(features, steps); // lưu cache
     } else {
       throw new Error('Feature sheet empty or failed');
     }
-    steps = (stepsRes.status === 'fulfilled') ? stepsRes.value : [];
   } catch(e) {
     features = SAMPLE_FEATURES; steps = SAMPLE_STEPS; usingDemo = true;
   }
 
+  afterLoad();
+}
+
+async function refreshCacheInBackground() {
+  try {
+    const [featRes, stepsRes] = await Promise.allSettled([
+      fetchSheet('Feature'),
+      fetchSheet('Steps')
+    ]);
+    if (featRes.status === 'fulfilled' && featRes.value.length) {
+      const newFeatures = featRes.value;
+      const newSteps    = stepsRes.status === 'fulfilled' ? stepsRes.value : [];
+
+      // So sánh với data đang hiển thị — nếu khác thì hiện banner
+      const oldSig = features.map(f => f['feature_id'] + (f['Lượt tìm kiếm']||'')).join('|');
+      const newSig = newFeatures.map(f => f['feature_id'] + (f['Lượt tìm kiếm']||'')).join('|');
+
+      saveCache(newFeatures, newSteps);
+
+      if (oldSig !== newSig) showUpdateBanner();
+    }
+  } catch(e) { /* fail thầm lặng */ }
+}
+
+function showUpdateBanner() {
+  // Tạo banner nếu chưa có
+  let banner = document.getElementById('update-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'update-banner';
+    banner.style.cssText = `
+      position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+      background:#0F0F0F; color:#fff; padding:12px 20px; border-radius:12px;
+      font-size:13px; font-family:'Be Vietnam Pro',sans-serif;
+      display:flex; align-items:center; gap:12px; z-index:9999;
+      box-shadow:0 4px 20px rgba(0,0,0,0.4); border:1px solid #333;
+      animation: slideUp 0.3s ease;
+    `;
+    banner.innerHTML = `
+      <span>🆕 Có dữ liệu mới</span>
+      <button onclick="applyUpdate()" style="
+        background:#FF6900; color:#fff; border:none; border-radius:8px;
+        padding:6px 14px; font-size:12px; font-weight:600;
+        font-family:'Be Vietnam Pro',sans-serif; cursor:pointer;">
+        Tải ngay
+      </button>
+      <button onclick="dismissBanner()" style="
+        background:none; border:none; color:#888; font-size:18px;
+        cursor:pointer; padding:0 4px; line-height:1;">×</button>
+    `;
+    // Thêm animation CSS
+    if (!document.getElementById('banner-style')) {
+      const style = document.createElement('style');
+      style.id = 'banner-style';
+      style.textContent = `@keyframes slideUp { from { opacity:0; transform:translateX(-50%) translateY(20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }`;
+      document.head.appendChild(style);
+    }
+    document.body.appendChild(banner);
+  }
+}
+
+function applyUpdate() {
+  // Đọc cache mới nhất rồi re-render
+  const cache = loadCache();
+  if (cache) {
+    features = cache.features;
+    steps    = cache.steps || [];
+    features.forEach((f,i) => {
+      if (!f['feature_id'] || !f['feature_id'].trim()) f['feature_id'] = 'AUTO_' + i;
+    });
+    const activeCount = features.filter(f => {
+      const s = String(f['Status'] || '').toLowerCase().trim();
+      return s !== 'archived' && s !== 'draft';
+    }).length;
+    document.getElementById('count-display').textContent = activeCount + ' tính năng';
+    renderTrending();
+    render();
+  }
+  dismissBanner();
+}
+
+function dismissBanner() {
+  const banner = document.getElementById('update-banner');
+  if (banner) banner.remove();
+}
+
+function afterLoad() {
   if (usingDemo) document.getElementById('demo-banner').classList.add('visible');
 
   features.forEach((f,i) => {
