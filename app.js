@@ -247,11 +247,12 @@ function render() {
     const congDung = String(f['Công dụng']  ||'').toLowerCase();
     const danhMuc  = String(f['Danh mục']   ||'').toLowerCase();
     const dongMay  = String(f['Dòng sản phẩm áp dụng'] ||'').toLowerCase();
-    const nq     = normalize(searchQ);
-    const matchQ = !nq
-      || normalize(ten).includes(nq)
-      || normalize(congDung).includes(nq)
-      || normalize(danhMuc).includes(nq);
+   const q      = searchQ.toLowerCase().trim();
+const nq     = normalize(searchQ);
+const matchQ = !nq
+  || normalize(ten).includes(nq)
+  || normalize(congDung).includes(nq)
+  || normalize(danhMuc).includes(nq);
     const matchF   = activeFilter === 'all' || f['Danh mục'] === activeFilter;
     const matchD   = activeDevice === 'all' || dongMay.includes('tất cả') || dongMay.includes(activeDevice.toLowerCase());
     return matchQ && matchF && matchD;
